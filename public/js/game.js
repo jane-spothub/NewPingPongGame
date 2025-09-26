@@ -1,219 +1,243 @@
-import {drawPaddle, drawTable, updateBall, drawBall,worldToScreen} from "/js/drawings.js";
 import {
-    ball,
-    botScore, botSpeed,
-    incrementBotScore,
-    incrementPlayerScore,
-    playerScore,
-    playerXP,
-    setBallHeld,
-    xpNeeded, bot, loadPaddleImages, player, scoreEl, addXP, ballHeld
+    playerScore, botScore, ball, player, bot,
+    setPlayerScore, setBotScore,
+    incrementPlayerScore, incrementBotScore,
+    setServerTurn, scoreEl,
+    width, height, setmatchStartTime, ballHeld, setBallHeld, incrementCurrentLevel, currentLevel, loadPaddleImages
 } from "./globals.js";
 
+import {
+    updateProgressUI, recordMatchCompletion, grantRewards,
+    updateBotMovement, resetBall,
+} from "./asyncfunctions.js";
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+import {
+    drawTable, drawBall, updateBall,
+    worldToScreen, hitPaddle, drawPaddle
+} from "./drawings.js";
+
+// import {SoundHandler} from "./soundHandler.js";
+// if (!window.soundHandler) window.soundHandler = new SoundHandler();
+
+// === Canvas setup ===
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 let last = performance.now();
 let running = true;
 let pointerActive = false;
 const keys = {};
-let server = "bot";   // who serves first (can toggle between "bot" and "player")
-let serveDelay = 1000; // 1s delay before bot serves
+let lastMatchResult = null; // track win/lose
 
+// === POPUPS ===
+const pauseBtn = document.getElementById("pause-btn");
+const popupLevel = document.getElementById("popup-level");
+const popupReward = document.getElementById("popup-reward");
+const rewardText = document.getElementById("reward-text");
 
-// HUD elements & popups
-const xpDisplay = document.getElementById('xp-display');
-const serveBtn = document.getElementById('serve-btn');
-const pauseBtn = document.getElementById('pause-btn');
-const popupLevel = document.getElementById('popup-level');
-const popupReward = document.getElementById('popup-reward');
-const rewardText = document.getElementById('reward-text');
-
-
-serveBtn.addEventListener('click', () => {
-    setBallHeld(false);
-});
-pauseBtn.addEventListener('click', () => {
+// Pause toggle
+pauseBtn.addEventListener("click", () => {
     running = !running;
-    pauseBtn.textContent = running ? 'Pause' : 'Resume';
+    pauseBtn.textContent = running ? "Pause" : "Resume";
     last = performance.now();
-    initGame();
+    if (running) loop(performance.now());
 });
 
-
-// Level start button
-document.getElementById('level-start').addEventListener('click', () => {
-    popupLevel.classList.add('hidden');
-    setBallHeld(false);
+// Start level popup
+document.getElementById("level-start").addEventListener("click", () => {
+    popupLevel.classList.add("hidden");
+    startLevel();
+});
+// Reward claim popup
+document.getElementById("claim-reward").addEventListener("click", () => {
+    popupReward.classList.add("hidden");
+    if (lastMatchResult === "win") {
+        incrementCurrentLevel();
+        updateFooter();
+        startLevel();
+    } else if (lastMatchResult === "lose") {
+        startLevel();
+        updateFooter();
+    }
 });
 
-
-// Claim reward
-document.getElementById('claim-reward').addEventListener('click', () => {
-    popupReward.classList.add('hidden');
-});
-
-async function initGame() {
-    await loadPaddleImages(); // make sure paddles are ready
-    loop();          // your render/update loop
-}
-
-// Simple AI to follow ball
-function updateAI(dt) {
-    const dir = ball.u - bot.u;
-    bot.u += Math.sign(dir) * Math.min(Math.abs(dir), botSpeed * dt * 0.5);
-}
-
-
-function checkScore() {
-// out-of-bounds scoring simple
-    if (ball.v > 1.1) {
-        incrementBotScore(true);
-        resetRound(false);
-    }
-    if (ball.v < -1.1) {
-        incrementPlayerScore(true);
-        resetRound(true);
-    }
-}
-
-
-
-function resetRound(playerWon) {
-    if (playerWon) {
-        addXP(25 + Math.floor(Math.random() * 25));
-        showReward('You scored! XP awarded');
-    }
-
-    ball.u = 0.5;
-    ball.v = 0;
-    ball.z = 0.1;
-    ball.vu = 0;
-    ball.vv = 0;
-    setBallHeld(true);
-
-    // Alternate server
-    server = (server === "player") ? "bot" : "player";
-}
-
-
-function showReward(text) {
+// === Show XP reward popup ===
+function showReward(text, earnedXP = 0) {
     rewardText.textContent = text;
-    popupReward.classList.remove('hidden');
-    updateXPUI();
+
+    if (earnedXP > 0) {
+        addXP(earnedXP);   // update global XP
+    }
+
+    popupReward.classList.remove("hidden");
 }
 
 
-function updateXPUI() {
-    xpDisplay.textContent = `XP: ${playerXP} / ${xpNeeded[Math.min(xpNeeded.length - 1, Math.floor(playerXP / 100) + 1)]}`;
-}
-
+// === Controls ===
 function pointerToU(x) {
     const left = worldToScreen(0, player.v);
     const right = worldToScreen(1, player.v);
     return Math.max(0, Math.min(1, (x - left.x) / (right.x - left.x)));
 }
 
-canvas.addEventListener("pointerdown", (e) => {
-    pointerActive = true;
-    player.u = pointerToU(e.clientX);
-    player.v = pointerToV(e.clientY);
-});
-canvas.addEventListener("pointerup", () => { pointerActive = false; });
-canvas.addEventListener("pointercancel", () => { pointerActive = false; });
+function pointerToV(y) {
+    const top = worldToScreen(0.5, -0.5).y;
+    const bottom = worldToScreen(0.5, 1.0).y;
+    const normalizedY = (y - top) / (bottom - top);
+    return Math.max(-0.5, Math.min(1.0, normalizedY * 1.5 - 0.5));
+}
 
-canvas.addEventListener("pointermove", (e) => {
-    if (!pointerActive) return;
-    e.preventDefault();
-
-    player.u = pointerToU(e.clientX);
-    player.v = pointerToV(e.clientY);
-});
-
-
+// Keyboard
 window.addEventListener("keydown", (e) => {
     keys[e.key] = true;
-    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
-        e.preventDefault();
-    }
+    if (["ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => {
     keys[e.key] = false;
 });
 
-function updatePlayerFromKeyboard(dt) {
-    const moveSpeedU = 0.0015 * dt; // left/right
-    const moveSpeedV = 0.001 * dt;  // up/down (slower for realism)
+// Mouse/touch
+canvas.addEventListener("pointerdown", (e) => {
+    pointerActive = true;
+    player.u = pointerToU(e.clientX);
+});
+canvas.addEventListener("pointerup", () => {
+    pointerActive = false;
+});
+canvas.addEventListener("pointermove", (e) => {
+    if (!pointerActive) return;
+    e.preventDefault();
+    player.u = pointerToU(e.clientX);
+    player.v = pointerToV(e.clientY);
+});
 
-    if (keys["ArrowLeft"])  player.u = Math.max(0, player.u - moveSpeedU);
-    if (keys["ArrowRight"]) player.u = Math.min(1, player.u + moveSpeedU);
-    if (keys["ArrowUp"])    player.v = Math.max(0.6, player.v - moveSpeedV);
-    if (keys["ArrowDown"])  player.v = Math.min(0.95, player.v + moveSpeedV);
+async function initGame() {
+    await loadPaddleImages();   // ✅ wait for images
+    loop();                     // ✅ start game only after images load
 }
 
-function pointerToV(y) {
-    const top = worldToScreen(0.5, 0.6).y;   // upper bound
-    const bottom = worldToScreen(0.5, 0.95).y; // lower bound
-    return Math.max(0.6, Math.min(0.95, (y - top) / (bottom - top)));
-}
+initGame();
 
-
-function loop() {
+// === Main Loop ===
+function loop(now) {
     if (!running) return;
-    const now = performance.now();
-    const dt = now - last;
+    const dt = Math.min(40, now - last);
     last = now;
-// physics
-    updatePlayerFromKeyboard(dt);
-    // Serve handling
-    if (ballHeld) {
-        if (server === "player") {
-            // Keep ball on player's paddle until they move/serve
-            ball.u = player.u;
-            ball.v = player.v - 0.03;
-        } else if (server === "bot") {
-            // Keep ball on bot's paddle until serve delay ends
-            ball.u = bot.u;
-            ball.v = bot.v + 0.03;
 
-            serveDelay -= dt;
-            if (serveDelay <= 0) {
-                // Bot serves: launch the ball
-                setBallHeld(false);
-                ball.vv = 0.0012;   // downward toward player
-                ball.vu = (Math.random() - 0.5) * 0.002; // slight angle
-                serveDelay = 1000;  // reset delay
-            }
+    // Clear + draw background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // const bg = ctx.createLinearGradient(0, 0, 0, height);
+    // bg.addColorStop(0, "#b28aff");
+    // bg.addColorStop(1, "#120017");
+    // ctx.fillStyle = bg;
+    // ctx.fillRect(0, 0, width, height);
+
+    // Update game
+    updateBotMovement(dt);
+    updateBall(dt);
+    drawTable();
+    const b = worldToScreen(bot.u, bot.v);
+    drawPaddle(ctx, b.x, b.y, Math.min(width, height) * 0.04, "#3498db", true);
+    drawBall();
+
+    // Draw paddles
+
+    const p = worldToScreen(player.u, player.v);
+    drawPaddle(ctx, p.x, p.y, Math.min(width, height) * 0.04, "#e74c3c", false);
+
+    // Paddle hits
+    if (hitPaddle(bot)) {
+        ball.vv = Math.abs(ball.vv) + 0.00005;
+        ball.vu += (ball.u - bot.u) * 0.015;
+        ball.v = bot.v + 0.03;
+    }
+    if (hitPaddle(player)) {
+        if (ballHeld) {
+            setBallHeld(false); // serve
+            ball.vv = -0.0012;
+            ball.vu = (Math.random() - 0.5) * 0.001;
+        } else {
+            ball.vv = -Math.abs(ball.vv) - 0.00005;
+            ball.vu += (ball.u - player.u) * 0.02;
+            ball.v = player.v - 0.03;
         }
     }
 
-    updateBall(dt);
-    updateAI(dt);
-    checkScore();
+    // Scoring
+    if (ball.v < bot.v - 0.15) {
+        incrementPlayerScore(true);
+        resetBall();
+        setServerTurn("bot");
+        updateProgressUI();
+    } else if (ball.v > player.v + 0.15) {
+        incrementBotScore(true);
+        resetBall();
+        setServerTurn("bot");
+        updateProgressUI();
+    }
 
-// clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTable();
-    drawPaddle(bot, true);
-    drawBall();
-    drawPaddle(player, false);
+    // Win/Lose
+    if (playerScore >= 7) {
+        const {earnedXP, earnedCoins} = grantRewards(true);
+        endLevel("win"); // pass outcome
+        showReward(`XP: ${earnedXP} Coins:${earnedCoins}`);
+        document.getElementById("claim-reward").innerText="Next Level"
+        document.getElementById("reward-title").innerText="You Won!!"
 
-// draw paddles simple
-//     const p = worldToScreen(player.u, player.v);
-//     const b = worldToScreen(bot.u, bot.v);
-    // D.drawPaddle(ctx, p.x, p.y, Math.min(canvas.width, canvas.height)*0.03, '#ffcc00', false);
-    // D.drawPaddle(ctx, b.x, b.y, Math.min(canvas.width, canvas.height)*0.03, '#00ccff', true);
+        return;
+    }
+    if (botScore >= 7) {
+        const {earnedXP, earnedCoins} = grantRewards(false);
+        endLevel("lose"); // pass outcome
+        showReward(`XP: ${earnedXP} Coins:${earnedCoins}`);
+        document.getElementById("reward-title").innerText="You Lost!!"
+        document.getElementById("claim-reward").innerText="play Again"
 
+        return;
+    }
 
-// HUD updates
+    // HUD
     scoreEl.textContent = `Player ${playerScore} : Bot ${botScore}`;
-    updateXPUI();
-
 
     requestAnimationFrame(loop);
 }
+function updateFooter() {
+    const footer = document.getElementById("footer-info");
+    footer.textContent = `Category: ${window.INIT_CATEGORY} · Level: ${currentLevel}`;
+}
+
+// === Level Flow ===
+function startLevel() {
+    setPlayerScore(0);
+    setBotScore(0);
+    updateProgressUI();
+    running = true;
+    setServerTurn("player");
+    setBallHeld(true);
+    resetBall();
+    last = performance.now();
+    setmatchStartTime(performance.now());
+    loop(performance.now());
+}
+
+function endLevel(result) {
+    running = false;
+    lastMatchResult = result;  // store "win" or "lose"
+    const win = (result === "win");
+    recordMatchCompletion(win);
+}
+export let playerXP = 0;
+function updateXPUI() {
+    const xpDisplay = document.getElementById("xp-display");
+    xpDisplay.textContent = `XP: ${playerXP}`;
+}
+
+export function addXP(amount) {
+    playerXP += amount;
+    updateXPUI();
+}
 
 
-// start showing level popup initially
-popupLevel.classList.remove('hidden');
-initGame();
+// === Startup ===
+// initProgress();
+popupLevel.classList.remove("hidden"); // show start popup first
+updateXPUI();

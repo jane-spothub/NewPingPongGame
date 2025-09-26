@@ -5,6 +5,7 @@
     padding: 0;
     font-family: 'Orbitron', sans-serif;
 }
+
 body {
     background: radial-gradient(circle at center, #0d0d0d, #000000);
     color: #f1f1f1;
@@ -22,13 +23,14 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(6px);
     z-index: 10;
     font-size: 1rem;
     color: #00ffe5;
     text-shadow: 0 0 6px #00ffe5, 0 0 12px #007a70;
 }
+
 #hud button {
     background: linear-gradient(135deg, #00ffe5, #007a70);
     border: none;
@@ -41,6 +43,7 @@ body {
     box-shadow: 0 0 10px #00ffe5;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 #hud button:hover {
     transform: scale(1.1);
     box-shadow: 0 0 20px #00ffe5, 0 0 30px #007a70;
@@ -62,7 +65,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.13);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -72,29 +75,34 @@ body {
     pointer-events: none;
     transition: opacity 0.3s ease;
 }
+
 .popup:not(.hidden) {
     opacity: 1;
     pointer-events: all;
 }
+
 .popup-inner {
-    background: #111;
-    border: 2px solid #00ffe5;
+    /*background: #111;*/
+    /*border: 2px solid #00ffe5;*/
     border-radius: 16px;
     padding: 30px;
     text-align: center;
-    box-shadow: 0 0 25px #00ffe5, 0 0 50px #007a70;
+    /*box-shadow: 0 0 25px #00ffe5, 0 0 50px #007a70;*/
     animation: popupIn 0.4s ease;
 }
+
 .popup-inner h2 {
     color: #00ffe5;
     font-size: 1.8rem;
     margin-bottom: 12px;
 }
+
 .popup-inner p {
     margin-bottom: 20px;
     font-size: 1rem;
     color: #e0e0e0;
 }
+
 .popup-inner button {
     background: linear-gradient(135deg, #ff00d9, #7500a0);
     border: none;
@@ -106,15 +114,69 @@ body {
     box-shadow: 0 0 12px #ff00d9;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .popup-inner button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px #ff00d9, 0 0 30px #7500a0;
+}
+.popup-container {
+    background: #111;
+    border: 2px solid #00ffe5;
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    width: auto;
+    box-shadow: 0 0 25px #00ffe5, 0 0 50px #007a70;
+    animation: popupIn 0.4s ease;
+}
+
+.popup-container h2 {
+    color: #00ffe5;
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+}
+
+.popup-container #reward-text {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: rgba(224, 224, 224, 0.51);
+}
+
+.popup-container button {
+    background: linear-gradient(135deg, #ff00d9, #7500a0);
+    border: none;
+    color: #fff;
+    padding: 10px 22px;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 12px #ff00d9;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.popup-container button:hover {
     transform: scale(1.1);
     box-shadow: 0 0 20px #ff00d9, 0 0 30px #7500a0;
 }
 
 @keyframes popupIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
+
+/*#reward-text {*/
+/*    display: flex;*/
+/*    justify-content: center;*/
+/*    gap: 20px;*/
+/*    align-items: center;*/
+/*    padding: 10px;*/
+/*}*/
 
 /* Footer */
 footer#footer-info {
@@ -126,9 +188,10 @@ footer#footer-info {
     font-size: 0.9rem;
     color: #00ffe5;
     text-shadow: 0 0 6px #00ffe5;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
 }
-.hud1, .hud2{
+
+.hud1, .hud2 {
     display: flex;
     justify-content: space-between;
     width: 100%;
@@ -141,16 +204,23 @@ footer#footer-info {
         gap: 8px;
         font-size: 0.9rem;
     }
-    .hud1, .hud2{
+
+    .hud1, .hud2 {
         display: flex;
         justify-content: space-between;
         width: 100%;
     }
+
     #hud button {
         margin: 5px 0;
         width: 100%;
     }
+
     .popup-inner {
+        width: 90%;
+        padding: 20px;
+    }
+    .popup-container {
         width: 90%;
         padding: 20px;
     }
