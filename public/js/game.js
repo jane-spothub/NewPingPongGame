@@ -107,8 +107,21 @@ canvas.addEventListener("pointermove", (e) => {
     if (!pointerActive) return;
     e.preventDefault();
     player.u = pointerToU(e.clientX);
-    player.v = pointerToV(e.clientY);
+
+    let v = pointerToV(e.clientY);
+    // Clamp to bottom half of the table
+    player.v = Math.max(0.5, Math.min(0.9, v));
 });
+
+// canvas.addEventListener("pointermove", (e) => {
+//     if (!pointerActive) return;
+//     e.preventDefault();
+//     player.u = pointerToU(e.clientX);
+//     // keep fixed y-position
+//     player.v = 0.82;
+// });
+
+
 
 async function initGame() {
     await loadPaddleImages();   // ✅ wait for images
