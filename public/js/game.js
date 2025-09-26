@@ -98,11 +98,8 @@ window.addEventListener("keyup", (e) => {
 // Mouse/touch
 canvas.addEventListener("pointerdown", (e) => {
     pointerActive = true;
-// Smooth movement factor (0.15 = smoother, lower = slower)
-    const smoothFactor = 0.15;
+    player.u = pointerToU(e.clientX);
 
-    player.u += (targetU - player.u) * smoothFactor;
-    player.v += (targetV - player.v) * smoothFactor;
 });
 canvas.addEventListener("pointerup", () => {
     pointerActive = false;
@@ -165,7 +162,10 @@ function loop(now) {
 
     const p = worldToScreen(player.u, player.v);
     drawPaddle(ctx, p.x, p.y, Math.min(width, height) * 0.04, "#e74c3c", false);
+    const smoothFactor = 0.15;
 
+    player.u += (targetU - player.u) * smoothFactor;
+    player.v += (targetV - player.v) * smoothFactor;
     // Paddle hits
     if (hitPaddle(bot)) {
         ball.vv = Math.abs(ball.vv) + 0.00005;
