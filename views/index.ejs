@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>PingPong — one page</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="hud">
+    <div class="hud1">
+        <div id="score-display">Player 0 : Bot 0</div>
+        <div id="xp-display">XP: 0</div>
+    </div>
+   <div class="hud2">
+       <button id="serve-btn">Serve</button>
+       <button id="pause-btn">Pause</button>
+   </div>
+
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<!-- Popups -->
+<div id="popup-level" class="popup hidden">
+    <div class="popup-inner">
+        <h2 id="level-title">Level 1</h2>
+        <p id="level-desc">Complete this level to earn XP and rewards.</p>
+        <button id="level-start">Start Level</button>
+    </div>
+</div>
+
+<div id="popup-reward" class="popup hidden">
+    <div class="popup-inner">
+        <h2>Reward!</h2>
+        <p id="reward-text">You earned a reward.</p>
+        <button id="claim-reward">Claim</button>
+    </div>
+</div>
+
+<footer id="footer-info">
+    Category: <%= typeof category !== 'undefined' ? category : 1 %> ·
+    Level: <%= typeof level !== 'undefined' ? level : 1 %>
+</footer>
+
+<script>
+    window.INIT_CATEGORY =<%- JSON.stringify(typeof category !== 'undefined' ? category : 1) %>;
+    window.INIT_LEVEL    =<%- JSON.stringify(typeof level !== 'undefined' ? level : 1) %>;
+</script>
+
+
+<script type="module" src="/js/globals.js"></script>
+<script type="module" src="/js/drawings.js"></script>
+<script type="module" src="/js/game.js"></script>
+</body>
+</html>
