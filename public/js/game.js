@@ -98,20 +98,29 @@ window.addEventListener("keyup", (e) => {
 // Mouse/touch
 canvas.addEventListener("pointerdown", (e) => {
     pointerActive = true;
-    player.u = pointerToU(e.clientX);
+// Smooth movement factor (0.15 = smoother, lower = slower)
+    const smoothFactor = 0.15;
+
+    player.u += (targetU - player.u) * smoothFactor;
+    player.v += (targetV - player.v) * smoothFactor;
 });
 canvas.addEventListener("pointerup", () => {
     pointerActive = false;
 });
+let targetU = player.u;
+let targetV = player.v;
+
 canvas.addEventListener("pointermove", (e) => {
     if (!pointerActive) return;
     e.preventDefault();
-    player.u = pointerToU(e.clientX);
+
+    targetU = pointerToU(e.clientX);
 
     let v = pointerToV(e.clientY);
-    // Clamp to bottom half of the table
-    player.v = Math.max(0.5, Math.min(0.9, v));
+    // Clamp bottom half
+    targetV = Math.max(0.5, Math.min(0.85, v));
 });
+
 
 // canvas.addEventListener("pointermove", (e) => {
 //     if (!pointerActive) return;
