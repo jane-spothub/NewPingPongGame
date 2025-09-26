@@ -96,27 +96,33 @@ window.addEventListener("keyup", (e) => {
 });
 
 // Mouse/touch
+let targetU = player.u;
+let targetV = player.v;
+
+// Touch start — just begin tracking
 canvas.addEventListener("pointerdown", (e) => {
     pointerActive = true;
-    player.u = pointerToU(e.clientX);
-
+    updateTargetFromPointer(e);
 });
+
 canvas.addEventListener("pointerup", () => {
     pointerActive = false;
 });
-let targetU = player.u;
-let targetV = player.v;
 
 canvas.addEventListener("pointermove", (e) => {
     if (!pointerActive) return;
     e.preventDefault();
+    updateTargetFromPointer(e);
+});
 
+// === Helper to map touch to paddle position ===
+function updateTargetFromPointer(e) {
     targetU = pointerToU(e.clientX);
 
     let v = pointerToV(e.clientY);
-    // Clamp bottom half
-    targetV = Math.max(0.5, Math.min(0.85, v));
-});
+    // Clamp so player stays on bottom half
+    targetV = Math.max(0.6, Math.min(0.9, v));
+}
 
 
 // canvas.addEventListener("pointermove", (e) => {
@@ -162,7 +168,7 @@ function loop(now) {
 
     const p = worldToScreen(player.u, player.v);
     drawPaddle(ctx, p.x, p.y, Math.min(width, height) * 0.04, "#e74c3c", false);
-    const smoothFactor = 0.15;
+    const smoothFactor = 0.2;
 
     player.u += (targetU - player.u) * smoothFactor;
     player.v += (targetV - player.v) * smoothFactor;
@@ -233,7 +239,7 @@ function startLevel() {
     setBotScore(0);
     updateProgressUI();
     running = true;
-    setServerTurn("player");
+    setServerTurn("bot");
     setBallHeld(true);
     resetBall();
     last = performance.now();
