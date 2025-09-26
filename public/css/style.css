@@ -169,6 +169,56 @@ body {
         opacity: 1;
     }
 }
+#mobile-controls {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    z-index: 9999;
+    user-select: none;
+}
+
+/* Common button style */
+#mobile-controls .ctrl-btn {
+    font-size: 26px;
+    width: 60px;
+    padding: 10px;
+    text-align: center;
+    border-radius: 50%;
+    border: 2px solid #00ffe0;
+    background: radial-gradient(circle at center, #111 30%, #222 100%);
+    color: #00ffe0;
+    box-shadow: 0 0 12px #00ffe0, inset 0 0 6px #00ffe0;
+    transition: all 0.2s ease;
+}
+
+/* Press effect */
+#mobile-controls .ctrl-btn:active {
+    transform: scale(0.9);
+    background: radial-gradient(circle at center, #00ffe0 20%, #004e4e 100%);
+    box-shadow: 0 0 18px #00ffe0, inset 0 0 10px #00ffe0;
+    color: #fff;
+}
+
+/* UP/DOWN stacked */
+#mobile-controls .updown {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Hide on larger screens */
+@media (min-width: 768px) {
+    #mobile-controls {
+        display: none;
+    }
+}
+
+
 
 /*#reward-text {*/
 /*    display: flex;*/

@@ -257,6 +257,25 @@ export function addXP(amount) {
     playerXP += amount;
     updateXPUI();
 }
+const moveStep = 0.05; // how far paddle moves per press
+
+function movePlayer(dir) {
+    if (dir === "left") targetU = Math.max(0, targetU - moveStep);
+    if (dir === "right") targetU = Math.min(1, targetU + moveStep);
+    if (dir === "up") targetV = Math.max(0.5, targetV - moveStep);
+    if (dir === "down") targetV = Math.min(0.9, targetV + moveStep);
+}
+
+// Mobile button listeners
+document.getElementById("btn-left")?.addEventListener("touchstart", () => movePlayer("left"));
+document.getElementById("btn-right")?.addEventListener("touchstart", () => movePlayer("right"));
+document.getElementById("btn-up")?.addEventListener("touchstart", () => movePlayer("up"));
+document.getElementById("btn-down")?.addEventListener("touchstart", () => movePlayer("down"));
+
+// Optional: also allow click for testing on desktop
+["left", "right", "up", "down"].forEach(dir => {
+    document.getElementById(`btn-${dir}`)?.addEventListener("click", () => movePlayer(dir));
+});
 
 
 // === Startup ===
