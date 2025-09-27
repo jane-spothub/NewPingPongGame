@@ -22,3 +22,8 @@ app.get('/', (req, res) => {
 
 app.listen(port, () =>
     console.log(`PingPong server running on http://localhost:${port}`));
+
+
+// Chess - With piece movement, check/checkmate detection
+// help make this game and let it have easy,medium,hard,advanced,expert,Novice levels of chess
+// make it have an option to change themes of the board and chess peices
